@@ -15,7 +15,7 @@ class Place(Base):
     latitude = Column(DECIMAL(10, 8), nullable=False)
     longitude = Column(DECIMAL(11, 8), nullable=False)
     description = Column(Text, nullable=False)
-    description_clean = Column(Text, nullable=False)
+    description_clean = Column(String, nullable=False)
     category_id = Column(Integer, ForeignKey("categories.id", ondelete="SET NULL"))
     url = Column(String(500))
     is_active = Column(Boolean, default=True)
