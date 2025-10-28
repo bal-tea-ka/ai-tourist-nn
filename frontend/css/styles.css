@@ -1,0 +1,219 @@
+﻿
+<!DOCTYPE html> <html lang="ru"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>AI-помощник туриста | Нижний Новгород</title>
+text
+<!-- Bootstrap CSS -->
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<!-- Custom CSS -->
+<link rel="stylesheet" href="css/styles.css">
+
+<!-- Yandex Maps API -->
+<script src="https://api-maps.yandex.ru/2.1/?apikey=YOUR_API_KEY&lang=ru_RU" type="text/javascript"></script>
+</head> <body> <div class="container mt-5"> <h1 class="text-center mb-4">🗺️ AI-помощник туриста</h1> <p class="text-center text-muted mb-5">Персональные маршруты по Нижнему Новгороду</p>
+text
+    <!-- Форма ввода -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form id="routeForm">
+                <div class="mb-3">
+                    <label for="interests" class="form-label">Ваши интересы</label>
+                    <input type="text" class="form-control" id="interests" 
+                           placeholder="история, кофейни, стрит-арт..." required>
+                    <div class="form-text">Например: музеи, парки, архитектура</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="time" class="form-label">Свободное время (часы): <span id="timeValue">3</span></label>
+                    <input type="range" class="form-range" id="time" min="1" max="8" value="3">
+                </div>
+                
+                <div class="mb-3">
+                    <label for="address" class="form-label">Ваше местоположение</label>
+                    <input type="text" class="form-control" id="address" 
+                           placeholder="Площадь Минина и Пожарского" required>
+                    <div class="form-text">Введите адрес в Нижнем Новгороде</div>
+                </div>
+                
+                <button type="submit" class="btn btn-primary w-100" id="submitBtn">
+                    <span id="btnText">Построить маршрут</span>
+                    <span id="btnSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Результат -->
+    <div id="result" class="d-none">
+        <h3 class="mb-3">📍 Ваш персональный маршрут</h3>
+        <div id="routeInfo" class="alert alert-info mb-3"></div>
+        <div id="map" style="width: 100%; height: 400px;" class="mb-4"></div>
+        <div id="placesList" class="row"></div>
+    </div>
+    
+    <!-- Ошибка -->
+    <div id="error" class="alert alert-danger d-none"></div>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Custom JS -->
+<script src="js/config.js"></script>
+<script src="js/api.js"></script>
+<script src="js/geocoder.js"></script>
+<script src="js/map.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/app.js"></script>
+</body> </html> "@ | Out-File -FilePath "frontend\index.html" -Encoding UTF8
+frontend/css/styles.css
+@"
+/* Custom styles для AI Tourist Assistant */
+
+:root {
+--primary-color: #0d6efd;
+--secondary-color: #6c757d;
+--success-color: #198754;
+--danger-color: #dc3545;
+}
+
+body {
+font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+min-height: 100vh;
+padding-bottom: 2rem;
+}
+
+.container {
+max-width: 1200px;
+}
+
+h1 {
+color: white;
+text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+}
+
+.text-muted {
+color: rgba(255,255,255,0.8) !important;
+}
+
+.card {
+box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+border-radius: 12px;
+border: none;
+background: white;
+}
+
+.card-body {
+padding: 2rem;
+}
+
+.form-label {
+font-weight: 600;
+color: #333;
+}
+
+.form-control:focus {
+border-color: var(--primary-color);
+box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+}
+
+.btn-primary {
+padding: 0.75rem 1.5rem;
+font-weight: 600;
+border-radius: 8px;
+transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+transform: translateY(-2px);
+box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+#map {
+border-radius: 12px;
+box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+border: 2px solid #e9ecef;
+}
+
+.place-card {
+margin-bottom: 1.5rem;
+transition: transform 0.2s ease;
+}
+
+.place-card:hover {
+transform: translateY(-4px);
+}
+
+.place-card .card {
+height: 100%;
+border-left: 4px solid var(--primary-color);
+}
+
+.place-number {
+display: inline-block;
+width: 32px;
+height: 32px;
+background: var(--primary-color);
+color: white;
+border-radius: 50%;
+text-align: center;
+line-height: 32px;
+font-weight: bold;
+margin-right: 0.5rem;
+}
+
+.place-category {
+display: inline-block;
+padding: 0.25rem 0.75rem;
+background: #e7f3ff;
+color: var(--primary-color);
+border-radius: 12px;
+font-size: 0.875rem;
+font-weight: 500;
+}
+
+.place-duration {
+color: var(--secondary-color);
+font-size: 0.9rem;
+}
+
+.alert-info {
+background: #e7f3ff;
+border-color: #b3d7ff;
+color: #004085;
+}
+
+#result {
+animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+from {
+opacity: 0;
+transform: translateY(20px);
+}
+to {
+opacity: 1;
+transform: translateY(0);
+}
+}
+
+/* Адаптивность */
+@media (max-width: 768px) {
+.container {
+padding: 1rem;
+}
+
+text
+h1 {
+    font-size: 1.75rem;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+#map {
+    height: 300px !important;
+}
+}
