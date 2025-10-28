@@ -10,7 +10,6 @@ Frontend: HTML/CSS/JS + Bootstrap + Yandex Maps
 Хостинг: Render (backend) + Vercel (frontend)
 
 📦 Структура проекта
-text
 ├── backend/          # FastAPI приложение
 ├── frontend/         # Веб-интерфейс
 ├── docs/            # Документация
