@@ -5,7 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 # Импортируем роутер
-from app.api import health
+from app.api import health, categories
 
 app = FastAPI(
     title="AI Tourist Assistant API",
@@ -24,6 +24,7 @@ app.add_middleware(
 
 # Подключаем роуты
 app.include_router(health.router, prefix="/api", tags=["Health"])
+app.include_router(categories.router, prefix="/api", tags=["Categories"])
 
 
 @app.get("/")
