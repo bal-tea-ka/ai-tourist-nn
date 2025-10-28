@@ -2,7 +2,7 @@
 from fastapi.middleware.cors import CORSMiddleware
 
 # Импортируем роутер
-from app.api import health, categories, routes
+from app.api import health, categories, routes, maps
 
 app = FastAPI(
     title="AI Tourist Assistant API",
@@ -23,6 +23,7 @@ app.add_middleware(
 app.include_router(health.router, prefix="/api", tags=["Health"])
 app.include_router(categories.router, prefix="/api", tags=["Categories"])
 app.include_router(routes.router, prefix="/api", tags=["Routes"])
+app.include_router(maps.router, prefix="/api", tags=["Maps"])
 
 
 @app.get("/")

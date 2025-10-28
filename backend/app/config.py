@@ -1,4 +1,7 @@
-﻿from pydantic_settings import BaseSettings
+﻿"""
+Конфигурация приложения
+"""
+from pydantic_settings import BaseSettings
 from typing import List
 
 class Settings(BaseSettings):
@@ -8,14 +11,15 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     
     # База данных
-    DATABASE_URL: str 
+    DATABASE_URL: str
     
     # API ключи
     PERPLEXITY_API_KEY: str = ""
+    YANDEX_MAPS_API_KEY: str = ""
     YANDEX_GEOCODER_API_KEY: str = ""
     
     # CORS
-    CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173"]
+    CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173"
     
     # Настройки маршрутов
     MAX_SEARCH_RADIUS_KM: int = 20
@@ -26,5 +30,9 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
         case_sensitive = True
+    
+    def get_cors_origins(self) -> List[str]:
+        """Получить список CORS origins"""
+        return [origin.strip() for origin in self.CORS_ORIGINS.split(",")]
 
 settings = Settings()
