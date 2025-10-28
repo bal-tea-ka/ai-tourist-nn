@@ -1,19 +1,19 @@
 """
 Routes API endpoint
-Генерация персональных маршрутов с данными из БД
+Генерация персональных маршрутов с логированием
 """
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.route import RouteRequest, RouteResponse
 from app.database import get_db
 from app.models.place import Place
 from app.models.category import Category
+from app.services.logging_service import log_route_request
 import time
 import random
 import string
 import math
-from decimal import Decimal
 
 router = APIRouter()
 
@@ -24,17 +24,13 @@ def generate_request_id() -> str:
 
 
 def calculate_distance(lat1: float, lon1: float, lat2, lon2) -> float:
-    """
-    Рассчитать расстояние между двумя точками (формула Haversine)
-    Возвращает расстояние в километрах
-    """
-    # Приводим Decimal к float
+    """Рассчитать расстояние между двумя точками (формула Haversine)"""
     lat1 = float(lat1)
     lon1 = float(lon1)
     lat2 = float(lat2)
     lon2 = float(lon2)
     
-    R = 6371  # Радиус Земли в км
+    R = 6371
     
     lat1_rad = math.radians(lat1)
     lat2_rad = math.radians(lat2)
@@ -48,11 +44,16 @@ def calculate_distance(lat1: float, lon1: float, lat2, lon2) -> float:
 
 
 @router.post("/route/generate", response_model=RouteResponse)
-async def generate_route(request: RouteRequest, db: AsyncSession = Depends(get_db)):
+async def generate_route(
+    route_request: RouteRequest, 
+    request: Request,  # ← Добавили для получения IP и User-Agent
+    db: AsyncSession = Depends(get_db)
+):
     """
-    Генерация персонального туристического маршрута из реальных данных БД
+    Генерация персонального туристического маршрута с логированием
     """
     start_time = time.time()
+    request_id = generate_request_id()
     
     try:
         # Получаем все активные места
@@ -62,8 +63,7 @@ async def generate_route(request: RouteRequest, db: AsyncSession = Depends(get_d
         all_places = list(result.scalars().all())
         
         if not all_places:
-            # Если в БД нет мест, возвращаем пустой маршрут
-            return {
+            response_data = {
                 "route": {
                     "places": [],
                     "route_order": [],
@@ -73,17 +73,18 @@ async def generate_route(request: RouteRequest, db: AsyncSession = Depends(get_d
                     "walking_time_minutes": 0,
                     "visit_time_minutes": 0,
                     "map_data": {
-                        "center": [request.user_location.latitude, request.user_location.longitude],
+                        "center": [route_request.user_location.latitude, route_request.user_location.longitude],
                         "zoom": 13
                     }
                 },
                 "metadata": {
                     "selected_categories": [],
                     "filtered_places_count": 0,
-                    "request_id": generate_request_id(),
+                    "request_id": request_id,
                     "execution_time_ms": 0
                 }
             }
+            return response_data
         
         # Получаем все категории
         categories_result = await db.execute(select(Category))
@@ -93,43 +94,39 @@ async def generate_route(request: RouteRequest, db: AsyncSession = Depends(get_d
         nearby_places = []
         for place in all_places:
             distance = calculate_distance(
-                request.user_location.latitude,
-                request.user_location.longitude,
-                place.latitude,  # это Decimal из БД
-                place.longitude   # это Decimal из БД
+                route_request.user_location.latitude,
+                route_request.user_location.longitude,
+                place.latitude,
+                place.longitude
             )
-            if distance <= 15:  # В радиусе 15 км
+            if distance <= 15:
                 nearby_places.append((place, distance))
         
-        # Сортируем по расстоянию
         nearby_places.sort(key=lambda x: x[1])
         
-        # Если не нашли места поблизости, берём ближайшие 10
         if not nearby_places:
             nearby_places = []
             for place in all_places[:10]:
                 distance = calculate_distance(
-                    request.user_location.latitude,
-                    request.user_location.longitude,
+                    route_request.user_location.latitude,
+                    route_request.user_location.longitude,
                     place.latitude,
                     place.longitude
                 )
                 nearby_places.append((place, distance))
             nearby_places.sort(key=lambda x: x[1])
         
-        # Выбираем места на основе доступного времени
-        available_minutes = request.available_time_hours * 60
+        # Выбираем места
+        available_minutes = route_request.available_time_hours * 60
         selected_places = []
         total_visit_time = 0
         used_categories = set()
         
-        # Выбираем разнообразные места
         for place, distance in nearby_places:
             category = categories_dict.get(place.category_id)
             if not category:
                 continue
                 
-            # Пытаемся выбрать из разных категорий
             if place.category_id not in used_categories:
                 if total_visit_time + category.avg_visit_duration <= available_minutes - 30:
                     selected_places.append((place, distance, category))
@@ -139,7 +136,6 @@ async def generate_route(request: RouteRequest, db: AsyncSession = Depends(get_d
                     if len(selected_places) >= 5:
                         break
         
-        # Если выбрали мало мест, добавляем ещё
         if len(selected_places) < 3:
             for place, distance in nearby_places:
                 if any(p.id == place.id for p, _, _ in selected_places):
@@ -159,7 +155,6 @@ async def generate_route(request: RouteRequest, db: AsyncSession = Depends(get_d
         # Формируем ответ
         places_data = []
         for place, distance, category in selected_places:
-            # Безопасно получаем description_clean
             description = place.description_clean if place.description_clean else place.description
             if description and len(description) > 300:
                 description = description[:300] + "..."
@@ -171,8 +166,8 @@ async def generate_route(request: RouteRequest, db: AsyncSession = Depends(get_d
                 "title": place.title,
                 "address": place.address or "",
                 "coordinates": {
-                    "latitude": float(place.latitude),  # Decimal → float
-                    "longitude": float(place.longitude)  # Decimal → float
+                    "latitude": float(place.latitude),
+                    "longitude": float(place.longitude)
                 },
                 "category": {
                     "id": category.id,
@@ -187,14 +182,13 @@ async def generate_route(request: RouteRequest, db: AsyncSession = Depends(get_d
         # Расчёты
         total_places = len(places_data)
         total_distance = sum(p["distance_from_user"] for p in places_data)
-        walking_time = int(total_distance / 4.5 * 60) if total_distance > 0 else 0  # 4.5 км/ч
+        walking_time = int(total_distance / 4.5 * 60) if total_distance > 0 else 0
         total_time = total_visit_time + walking_time
         route_order = [p["id"] for p in places_data]
         
-        # Время выполнения
         execution_time = int((time.time() - start_time) * 1000)
         
-        return {
+        response_data = {
             "route": {
                 "places": places_data,
                 "route_order": route_order,
@@ -204,17 +198,33 @@ async def generate_route(request: RouteRequest, db: AsyncSession = Depends(get_d
                 "walking_time_minutes": walking_time,
                 "visit_time_minutes": total_visit_time,
                 "map_data": {
-                    "center": [request.user_location.latitude, request.user_location.longitude],
+                    "center": [route_request.user_location.latitude, route_request.user_location.longitude],
                     "zoom": 13
                 }
             },
             "metadata": {
                 "selected_categories": list(used_categories),
                 "filtered_places_count": len(nearby_places),
-                "request_id": generate_request_id(),
+                "request_id": request_id,
                 "execution_time_ms": execution_time
             }
         }
+        
+        # Логируем запрос в БД
+        client_ip = request.client.host if request.client else None
+        user_agent = request.headers.get("user-agent", None)
+        
+        await log_route_request(
+            db=db,
+            request_data=route_request,
+            response_data=response_data,
+            request_id=request_id,
+            execution_time_ms=execution_time,
+            ip_address=client_ip,
+            user_agent=user_agent
+        )
+        
+        return response_data
         
     except Exception as e:
         print(f"❌ Ошибка генерации маршрута: {e}")
