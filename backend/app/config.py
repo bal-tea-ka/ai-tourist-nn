@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     
     # База данных
-    DATABASE_URL: str = "postgresql+asyncpg://user:password@localhost:5432/tourist_db"
+    DATABASE_URL: str 
     
     # API ключи
     PERPLEXITY_API_KEY: str = ""
