@@ -3,60 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI-помощник туриста | Нижний Новгород</title>
-    
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>AI Туристический помощник - Нижний Новгород</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <link rel="stylesheet" href="css/styles.css">
+    <script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU" type="text/javascript"></script>
 </head>
 <body>
-    <div class="container mt-5">
-        <h1 class="text-center mb-4">🗺️ AI-помощник туриста</h1>
-        <p class="text-center text-muted mb-5">Персональные маршруты по Нижнему Новгороду</p>
-        
-        <div class="card mb-4">
+    <!-- Navbar - адаптивный для всех экранов -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+        <div class="container-fluid px-3">
+            <a class="navbar-brand me-auto" href="index.html">
+                <i class="bi bi-compass d-none d-md-inline"></i>
+                <span class="d-none d-sm-inline">AI Туристический помощник</span>
+                <span class="d-inline d-sm-none">AI Помощник</span>
+            </a>
+            
+            <!-- Кнопка переключения темы -->
+            <label class="theme-toggle d-none d-lg-inline-block">
+                <input type="checkbox" id="themeToggle">
+                <span class="theme-slider">
+                    <i class="bi bi-moon-fill" id="themeIcon"></i>
+                </span>
+            </label>
+            
+            <button class="navbar-toggler ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="index.html">
+                            <i class="bi bi-house-door"></i> Главная
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="stats.html">
+                            <i class="bi bi-graph-up"></i> Статистика
+                        </a>
+                    </li>
+                    <!-- Переключатель темы для мобильной версии -->
+                    <li class="nav-item d-lg-none">
+                        <a class="nav-link" href="#" id="mobileThemeToggle" onclick="toggleThemeMobile(); return false;">
+                            <i class="bi bi-moon-stars" id="mobileThemeIcon"></i>
+                            <span id="mobileThemeText">Темная тема</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container my-5">
+    <!-- Hero Section с градиентом -->
+        <div class="hero-section text-center mb-5 fade-in">
+            <h1 class="display-4 fw-bold mb-3">
+                <i class="bi bi-map"></i> AI Туристический помощник
+            </h1>
+            <p class="lead mb-4">
+                Персональные маршруты по Нижнему Новгороду на основе ваших интересов
+            </p>
+        </div>
+        <!-- Форма -->
+        <div class="card shadow-lg mb-4 fade-in">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-pencil-square"></i> Создайте свой маршрут
+                </h5>
+            </div>
             <div class="card-body">
                 <form id="routeForm">
-                    <div class="mb-3">
-                        <label for="interests" class="form-label">Ваши интересы</label>
+                    <div class="mb-4">
+                        <label for="interests" class="form-label">
+                            <i class="bi bi-heart"></i> Ваши интересы
+                        </label>
                         <input type="text" class="form-control" id="interests" 
-                               placeholder="история, кофейни, стрит-арт..." required>
-                        <div class="form-text">Например: музеи, парки, архитектура</div>
+                               placeholder="история, музеи, архитектура, искусство" required>
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> Опишите что вам интересно
+                        </small>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="time" class="form-label">Свободное время (часы): <span id="timeValue">3</span></label>
-                        <input type="range" class="form-range" id="time" min="1" max="8" value="3">
+
+                    <div class="mb-4">
+                        <label for="time" class="form-label">
+                            <i class="bi bi-clock"></i> Доступное время (часы)
+                        </label>
+                        <input type="number" class="form-control" id="time" 
+                               min="1" max="8" value="3" required>
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> От 1 до 8 часов
+                        </small>
                     </div>
-                    
-                    <div class="mb-3">
-                        <label for="address" class="form-label">Ваше местоположение</label>
+
+                    <div class="mb-4">
+                        <label for="address" class="form-label">
+                            <i class="bi bi-geo-alt"></i> Ваше местоположение
+                        </label>
                         <input type="text" class="form-control" id="address" 
+                               list="addressSuggestions"
                                placeholder="Площадь Минина и Пожарского" required>
-                        <div class="form-text">Введите адрес в Нижнем Новгороде</div>
+                        
+                        <datalist id="addressSuggestions">
+                            <option value="Площадь Минина и Пожарского">
+                            <option value="Кремль">
+                            <option value="Чкаловская лестница">
+                            <option value="Большая Покровская">
+                            <option value="Нижне-Волжская набережная">
+                            <option value="Стрелка">
+                        </datalist>
+                        
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> Начните вводить адрес или название места
+                        </small>
                     </div>
-                    
-                    <button type="submit" class="btn btn-primary w-100" id="submitBtn">
-                        <span id="btnText">Построить маршрут</span>
-                        <span id="btnSpinner" class="spinner-border spinner-border-sm d-none"></span>
+
+                    <button type="submit" class="btn btn-primary btn-lg w-100" id="submitBtn">
+                        <i class="bi bi-map"></i> Построить маршрут
                     </button>
                 </form>
             </div>
         </div>
-        
-        <div id="result" class="d-none">
-            <h3 class="mb-3">📍 Ваш персональный маршрут</h3>
-            <div id="routeInfo" class="alert alert-info mb-3"></div>
-            <div id="map" style="width: 100%; height: 400px;" class="mb-4"></div>
-            <div id="placesList" class="row"></div>
+
+        <!-- Карта -->
+        <div class="card shadow-lg mb-4" id="mapContainer" style="display: none;">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-pin-map"></i> Ваш маршрут на карте
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div id="map" style="width: 100%; height: 500px;"></div>
+            </div>
         </div>
-        
-        <div id="error" class="alert alert-danger d-none"></div>
+
+        <!-- Результаты -->
+        <div id="results"></div>
     </div>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="js/config.js"></script>
-    <script src="js/ui.js"></script>
-    <script src="js/api.js"></script>
+
+    <!-- Footer -->
+    <footer class="text-center text-white mt-5">
+        <div class="container pb-4">
+            <p class="mb-0">
+                <i class="bi bi-code-slash"></i> Создано для хакатона GorСyCode 2025
+            </p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/map-simple.js"></script>
     <script src="js/app.js"></script>
+    
+    <script>
+        ymaps.ready(initMap);
+    </script>
 </body>
 </html>

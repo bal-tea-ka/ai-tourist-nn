@@ -1,219 +1,587 @@
-﻿
-<!DOCTYPE html> <html lang="ru"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0"> <title>AI-помощник туриста | Нижний Новгород</title>
-text
-<!-- Bootstrap CSS -->
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
-<!-- Custom CSS -->
-<link rel="stylesheet" href="css/styles.css">
-
-<!-- Yandex Maps API -->
-<script src="https://api-maps.yandex.ru/2.1/?apikey=YOUR_API_KEY&lang=ru_RU" type="text/javascript"></script>
-</head> <body> <div class="container mt-5"> <h1 class="text-center mb-4">🗺️ AI-помощник туриста</h1> <p class="text-center text-muted mb-5">Персональные маршруты по Нижнему Новгороду</p>
-text
-    <!-- Форма ввода -->
-    <div class="card mb-4">
-        <div class="card-body">
-            <form id="routeForm">
-                <div class="mb-3">
-                    <label for="interests" class="form-label">Ваши интересы</label>
-                    <input type="text" class="form-control" id="interests" 
-                           placeholder="история, кофейни, стрит-арт..." required>
-                    <div class="form-text">Например: музеи, парки, архитектура</div>
-                </div>
-                
-                <div class="mb-3">
-                    <label for="time" class="form-label">Свободное время (часы): <span id="timeValue">3</span></label>
-                    <input type="range" class="form-range" id="time" min="1" max="8" value="3">
-                </div>
-                
-                <div class="mb-3">
-                    <label for="address" class="form-label">Ваше местоположение</label>
-                    <input type="text" class="form-control" id="address" 
-                           placeholder="Площадь Минина и Пожарского" required>
-                    <div class="form-text">Введите адрес в Нижнем Новгороде</div>
-                </div>
-                
-                <button type="submit" class="btn btn-primary w-100" id="submitBtn">
-                    <span id="btnText">Построить маршрут</span>
-                    <span id="btnSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
-                </button>
-            </form>
-        </div>
-    </div>
-    
-    <!-- Результат -->
-    <div id="result" class="d-none">
-        <h3 class="mb-3">📍 Ваш персональный маршрут</h3>
-        <div id="routeInfo" class="alert alert-info mb-3"></div>
-        <div id="map" style="width: 100%; height: 400px;" class="mb-4"></div>
-        <div id="placesList" class="row"></div>
-    </div>
-    
-    <!-- Ошибка -->
-    <div id="error" class="alert alert-danger d-none"></div>
-</div>
-
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- Custom JS -->
-<script src="js/config.js"></script>
-<script src="js/api.js"></script>
-<script src="js/geocoder.js"></script>
-<script src="js/map.js"></script>
-<script src="js/ui.js"></script>
-<script src="js/app.js"></script>
-</body> </html> "@ | Out-File -FilePath "frontend\index.html" -Encoding UTF8
-frontend/css/styles.css
-@"
-/* Custom styles для AI Tourist Assistant */
-
+﻿/* ==================== Приглушенная цветовая палитра Нижнего Новгорода ==================== */
 :root {
---primary-color: #0d6efd;
---secondary-color: #6c757d;
---success-color: #198754;
---danger-color: #dc3545;
+    /* Приглушенные цвета герба НН */
+    --nn-red: #B73239;           /* Приглушенный червлёный */
+    --nn-red-light: #C9444A;     /* Светлый приглушенный */
+    --nn-red-dark: #8E282D;      /* Тёмный приглушенный */
+    --nn-silver: #C0C0C0;        /* Серебро */
+    --nn-silver-light: #E8E8E8;  /* Светлое серебро */
+    --nn-silver-dark: #94A3B8;   /* Тёмное серебро */
+    --nn-black: #1A1A1A;         /* Чёрный */
+    --nn-gray: #6B7280;          /* Мягкий серый */
+    --nn-accent: #8B4F5C;        /* Акцентный розово-бордовый */
+    --nn-bronze: #A67C52;        /* Бронзовый (вместо жёлтого) */
+    
+    /* Основные цвета на базе приглушенной палитры */
+    --primary-color: #B73239;
+    --primary-hover: #8E282D;
+    --success-color: #8B4F5C;    /* Вместо зелёного - бордо */
+    --danger-color: #B73239;
+    --warning-color: #A67C52;    /* Вместо жёлтого - бронзовый */
+    --info-color: #6B7280;
+    --dark-color: #1A1A1A;
+    --light-color: #E8E8E8;
+    
+    /* Фоны светлой темы */
+    --bg-body: #F9FAFB;
+    --bg-card: #FFFFFF;
+    --bg-navbar: rgba(255, 255, 255, 0.95);
+    --bg-hero-start: #B73239;
+    --bg-hero-end: #8E282D;
+    
+    /* Текст светлой темы */
+    --text-primary: #111827;
+    --text-secondary: #6B7280;
+    --text-muted: #9CA3AF;
+    
+    /* Границы и тени */
+    --border-color: #E5E7EB;
+    --box-shadow: 0 4px 6px rgba(183, 50, 57, 0.08);
+    --box-shadow-hover: 0 8px 16px rgba(183, 50, 57, 0.12);
+    
+    --border-radius: 12px;
+    --transition: all 0.3s ease;
+}
+
+/* ==================== Тёмная тема в приглушенных цветах НН ==================== */
+[data-theme="dark"] {
+    /* Фоны тёмной темы */
+    --bg-body: #0F1419;
+    --bg-card: #1A1F2E;
+    --bg-navbar: rgba(26, 31, 46, 0.95);
+    --bg-hero-start: #8E282D;
+    --bg-hero-end: #6B1F23;
+    
+    /* Текст тёмной темы */
+    --text-primary: #F3F4F6;
+    --text-secondary: #D1D5DB;
+    --text-muted: #9CA3AF;
+    
+    /* Границы и тени */
+    --border-color: #2D3748;
+    --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.4);
+    --box-shadow-hover: 0 8px 16px rgba(0, 0, 0, 0.5);
+}
+
+
+
+
+/* ==================== Общие стили ==================== */
+* {
+    box-sizing: border-box;
 }
 
 body {
-font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-min-height: 100vh;
-padding-bottom: 2rem;
+    background-color: var(--bg-body);
+    color: var(--text-primary);
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding-bottom: 3rem;
+    transition: var(--transition);
 }
 
+/* ==================== Container ==================== */
 .container {
-max-width: 1200px;
+    max-width: 1200px;
 }
 
-h1 {
-color: white;
-text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+/* ==================== Navbar ==================== */
+.navbar {
+    background: var(--bg-navbar) !important;
+    box-shadow: var(--box-shadow);
+    backdrop-filter: blur(10px);
+    padding: 0.75rem 0;
+    transition: var(--transition);
 }
 
-.text-muted {
-color: rgba(255,255,255,0.8) !important;
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.2rem;
+    padding: 0.5rem 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
+.navbar-brand,
+.nav-link {
+    color: var(--text-primary) !important;
+}
+
+.navbar-toggler {
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    padding: 0.4rem 0.6rem;
+    transition: var(--transition);
+    flex-shrink: 0;
+}
+
+.navbar-toggler:focus {
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.navbar-toggler:hover {
+    background-color: rgba(13, 110, 253, 0.1);
+}
+
+/* ==================== Hero Section ==================== */
+.hero-section {
+    background: linear-gradient(135deg, var(--bg-hero-start) 0%, var(--bg-hero-end) 100%);
+    padding: 2.5rem 1.5rem;
+    margin-bottom: 2rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+}
+
+.hero-section h1 {
+    color: white !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.hero-section p {
+    color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.hero-section .lead {
+    font-size: 1.15rem;
+}
+
+/* ==================== Cards ==================== */
 .card {
-box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-border-radius: 12px;
-border: none;
-background: white;
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    transition: var(--transition);
+    overflow: hidden;
 }
 
-.card-body {
-padding: 2rem;
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: var(--box-shadow-hover);
 }
 
-.form-label {
-font-weight: 600;
-color: #333;
-}
-
-.form-control:focus {
-border-color: var(--primary-color);
-box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
-}
-
-.btn-primary {
-padding: 0.75rem 1.5rem;
-font-weight: 600;
-border-radius: 8px;
-transition: all 0.3s ease;
-}
-
-.btn-primary:hover {
-transform: translateY(-2px);
-box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-}
-
-#map {
-border-radius: 12px;
-box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-border: 2px solid #e9ecef;
-}
-
-.place-card {
-margin-bottom: 1.5rem;
-transition: transform 0.2s ease;
-}
-
-.place-card:hover {
-transform: translateY(-4px);
-}
-
-.place-card .card {
-height: 100%;
-border-left: 4px solid var(--primary-color);
-}
-
-.place-number {
-display: inline-block;
-width: 32px;
-height: 32px;
-background: var(--primary-color);
-color: white;
-border-radius: 50%;
-text-align: center;
-line-height: 32px;
-font-weight: bold;
-margin-right: 0.5rem;
-}
-
-.place-category {
-display: inline-block;
-padding: 0.25rem 0.75rem;
-background: #e7f3ff;
-color: var(--primary-color);
-border-radius: 12px;
-font-size: 0.875rem;
-font-weight: 500;
-}
-
-.place-duration {
-color: var(--secondary-color);
-font-size: 0.9rem;
-}
-
-.alert-info {
-background: #e7f3ff;
-border-color: #b3d7ff;
-color: #004085;
-}
-
-#result {
-animation: fadeIn 0.5s ease;
-}
-
-@keyframes fadeIn {
-from {
-opacity: 0;
-transform: translateY(20px);
-}
-to {
-opacity: 1;
-transform: translateY(0);
-}
-}
-
-/* Адаптивность */
-@media (max-width: 768px) {
-.container {
-padding: 1rem;
-}
-
-text
-h1 {
-    font-size: 1.75rem;
+.card-header {
+    border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+    font-weight: 600;
+    padding: 1.2rem 1.5rem;
 }
 
 .card-body {
     padding: 1.5rem;
 }
 
-#map {
-    height: 300px !important;
+/* ==================== Form ==================== */
+.form-control,
+.form-select {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    border: 2px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    transition: var(--transition);
 }
+
+.form-control:focus,
+.form-select:focus {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+.form-label {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.text-muted {
+    color: var(--text-muted) !important;
+}
+
+/* ==================== Buttons с цветами НН ==================== */
+.btn-primary {
+    background: linear-gradient(135deg, var(--nn-red) 0%, var(--nn-red-dark) 100%);
+    border: none;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--nn-red-dark) 0%, #7A181C 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(193, 39, 45, 0.3);
+}
+
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* ==================== Hero Section с цветами НН ==================== */
+.hero-section {
+    background: linear-gradient(135deg, var(--bg-hero-start) 0%, var(--bg-hero-end) 100%);
+    padding: 2.5rem 1.5rem;
+    margin-bottom: 2rem;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    border: 2px solid var(--nn-red-dark);
+}
+
+.hero-section h1 {
+    color: white !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.hero-section p {
+    color: rgba(255, 255, 255, 0.95) !important;
+}
+
+/* ==================== List Group с акцентом НН ==================== */
+.list-group-item {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+    border-left: 4px solid var(--nn-red);
+    margin-bottom: 1rem;
+    border-radius: 8px !important;
+    transition: var(--transition);
+}
+
+.list-group-item:hover {
+    border-left-color: var(--nn-red-light);
+    transform: translateX(5px);
+}
+
+/* ==================== Stat Numbers с градиентом НН ==================== */
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--nn-red), var(--nn-red-light));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* ==================== Badges с цветами НН ==================== */
+.badge.bg-primary {
+    background-color: var(--nn-red) !important;
+}
+
+.badge.bg-info {
+    background-color: var(--nn-gray) !important;
+}
+
+/* ==================== Progress Bar с цветом НН ==================== */
+.progress-bar {
+    background-color: var(--nn-red) !important;
+    transition: width 1s ease;
+}
+
+/* ==================== Card Headers в палитре НН ==================== */
+.card-header.bg-primary {
+    background: linear-gradient(135deg, var(--nn-red), var(--nn-red-dark)) !important;
+    color: white !important;
+}
+
+.card-header.bg-success {
+    background: linear-gradient(135deg, var(--nn-accent), #6B3845) !important;
+    color: white !important;
+}
+
+.card-header.bg-warning {
+    background: linear-gradient(135deg, var(--nn-bronze), #8B6843) !important;
+    color: white !important;
+}
+
+.card-header.bg-info {
+    background: linear-gradient(135deg, var(--nn-silver-dark), var(--nn-gray)) !important;
+    color: white !important;
+}
+
+/* Тёмная тема */
+[data-theme="dark"] .card-header.bg-success {
+    background: linear-gradient(135deg, #6B3845, #4A2830) !important;
+}
+
+[data-theme="dark"] .card-header.bg-warning {
+    background: linear-gradient(135deg, #8B6843, #6A4F32) !important;
+}
+
+[data-theme="dark"] .card-header.bg-info {
+    background: linear-gradient(135deg, var(--nn-gray), #4B5563) !important;
+}
+
+
+/* ==================== Theme Toggle с цветами НН ==================== */
+.theme-toggle {
+    background-color: var(--nn-silver);
+}
+
+[data-theme="dark"] .theme-toggle {
+    background-color: #2d2d2d;
+}
+
+.theme-slider i {
+    color: var(--nn-red);
+}
+
+/* ==================== Navbar Brand с акцентом ==================== */
+.navbar-brand i {
+    color: var(--nn-red);
+}
+
+/* ==================== Links с цветом НН ==================== */
+a {
+    color: var(--nn-red);
+    text-decoration: none;
+    transition: var(--transition);
+}
+
+a:hover {
+    color: var(--nn-red-dark);
+}
+
+
+/* ==================== Map Container ==================== */
+#mapContainer {
+    animation: slideDown 0.5s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+#map {
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+}
+
+/* ==================== Results ==================== */
+.stat-number {
+    font-size: 2.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--primary-color), #667eea);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.stat-card {
+    transition: var(--transition);
+    cursor: pointer;
+}
+
+.stat-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+}
+
+/* ==================== List Group ==================== */
+.list-group-item {
+    background-color: var(--bg-card);
+    color: var(--text-primary);
+    border-color: var(--border-color);
+    border-left: 4px solid var(--primary-color);
+    margin-bottom: 1rem;
+    border-radius: 8px !important;
+    transition: var(--transition);
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+    border-left-color: var(--success-color);
+    transform: translateX(5px);
+}
+
+[data-theme="dark"] .list-group-item:hover {
+    background-color: #334155;
+}
+
+/* ==================== Badges ==================== */
+.badge {
+    padding: 0.5rem 0.8rem;
+    font-weight: 600;
+    border-radius: 6px;
+}
+
+/* ==================== Progress Bars ==================== */
+.progress {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    transition: width 1s ease;
+}
+
+/* ==================== Animations ==================== */
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+.loading {
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.fade-in {
+    animation: fadeIn 0.5s ease;
+}
+
+/* ==================== Кнопка переключения темы ==================== */
+.theme-toggle {
+    position: relative;
+    width: 50px;
+    height: 26px;
+    background-color: #cbd5e1;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    display: inline-block;
+    margin-left: 1rem;
+}
+
+.theme-toggle input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.theme-slider {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 22px;
+    height: 22px;
+    background-color: white;
+    border-radius: 50%;
+    transition: transform 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.theme-slider i {
+    color: #fbbf24;
+}
+
+.theme-toggle input:checked + .theme-slider {
+    transform: translateX(24px);
+}
+
+[data-theme="dark"] .theme-toggle {
+    background-color: #334155;
+}
+
+/* ==================== Mobile Responsive ==================== */
+@media (max-width: 768px) {
+    .stat-number {
+        font-size: 2rem;
+    }
+    
+    #map {
+        height: 400px !important;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .btn {
+        padding: 0.6rem 1.2rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .navbar-brand {
+        font-size: 0.95rem;
+        max-width: calc(100vw - 100px);
+    }
+    
+    .brand-text {
+        display: inline-block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .navbar-toggler {
+        padding: 0.35rem 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .hero-section {
+        padding: 2rem 1rem;
+    }
+    
+    .hero-section h1 {
+        font-size: 1.8rem;
+    }
+    
+    .hero-section .lead {
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 360px) {
+    .navbar-brand {
+        font-size: 0.85rem;
+        max-width: calc(100vw - 90px);
+    }
+    
+    .navbar-toggler {
+        padding: 0.3rem 0.45rem;
+    }
+}
+
+@media (min-width: 577px) and (max-width: 768px) {
+    .navbar-brand {
+        font-size: 1.1rem;
+    }
+}
+
+@media (min-width: 992px) {
+    .navbar-brand {
+        font-size: 1.3rem;
+    }
+}
+
+/* ==================== Scrollbar ==================== */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-hover);
 }

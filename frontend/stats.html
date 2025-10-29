@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Статистика - AI Туристический помощник</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .stat-card {
+            transition: transform 0.2s;
+        }
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+        .stat-number {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #0d6efd;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light mb-4">
+        <div class="container-fluid px-3">
+            <a class="navbar-brand me-auto" href="index.html">
+                <i class="bi bi-compass d-none d-md-inline"></i>
+                <span class="d-none d-sm-inline">AI Туристический помощник</span>
+                <span class="d-inline d-sm-none">AI Помощник</span>
+            </a>
+            
+            <!-- Кнопка переключения темы -->
+            <label class="theme-toggle d-none d-lg-inline-block">
+                <input type="checkbox" id="themeToggle">
+                <span class="theme-slider">
+                    <i class="bi bi-moon-fill" id="themeIcon"></i>
+                </span>
+            </label>
+            
+            <button class="navbar-toggler ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="index.html">
+                            <i class="bi bi-house-door"></i> Главная
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="stats.html">
+                            <i class="bi bi-graph-up"></i> Статистика
+                        </a>
+                    </li>
+                    <!-- Переключатель темы для мобильной версии -->
+                    <li class="nav-item d-lg-none">
+                        <a class="nav-link" href="#" id="mobileThemeToggle" onclick="toggleThemeMobile(); return false;">
+                            <i class="bi bi-moon-stars" id="mobileThemeIcon"></i>
+                            <span id="mobileThemeText">Темная тема</span>
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+
+    <div class="container my-5">
+        <!-- Hero для статистики -->
+        <div class="hero-section text-center mb-5 fade-in">
+            <h1 class="display-4 fw-bold mb-3">
+                <i class="bi bi-graph-up"></i> Статистика использования
+            </h1>
+            <p class="lead mb-4">
+                Аналитика запросов и популярных маршрутов
+            </p>
+        </div>
+        
+        <!-- Основные метрики - остаются белыми -->
+        <div class="row mb-4" id="mainStats">
+        
+        <!-- Основные метрики -->
+        <div class="row mb-4" id="mainStats">
+            <div class="col-md-3 mb-3">
+                <div class="card stat-card shadow-sm text-center">
+                    <div class="card-body">
+                        <h6 class="text-muted">Всего запросов</h6>
+                        <p class="stat-number mb-0" id="totalRequests">-</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card stat-card shadow-sm text-center">
+                    <div class="card-body">
+                        <h6 class="text-muted">За 24 часа</h6>
+                        <p class="stat-number mb-0" id="recentRequests">-</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card stat-card shadow-sm text-center">
+                    <div class="card-body">
+                        <h6 class="text-muted">Среднее время</h6>
+                        <p class="stat-number mb-0" id="avgTime">-</p>
+                        <small class="text-muted">минут</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3">
+                <div class="card stat-card shadow-sm text-center">
+                    <div class="card-body">
+                        <h6 class="text-muted">Среднее расстояние</h6>
+                        <p class="stat-number mb-0" id="avgDistance">-</p>
+                        <small class="text-muted">км</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Средние значения -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">⚡ Производительность</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <h6 class="text-muted">Среднее количество мест</h6>
+                                <p class="fs-2 text-primary mb-0" id="avgPlaces">-</p>
+                            </div>
+                            <div class="col-6">
+                                <h6 class="text-muted">Время выполнения</h6>
+                                <p class="fs-2 text-primary mb-0" id="avgExecution">-</p>
+                                <small class="text-muted">мс</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0">🎯 Популярные интересы</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="popularInterests">
+                            <p class="text-muted text-center">Загрузка...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Популярные локации -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="mb-0">📍 Популярные точки старта</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="popularLocations">
+                            <p class="text-muted text-center">Загрузка...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Статистика по категориям -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">🏷️ Популярность категорий</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="categoryStats">
+                            <p class="text-muted text-center">Загрузка...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center">
+            <a href="index.html" class="btn btn-primary btn-lg">← Вернуться к генератору маршрутов</a>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/theme.js"></script>
+    <script src="js/stats.js"></script>
+</body>
+</html>
