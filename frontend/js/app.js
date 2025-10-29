@@ -16,42 +16,47 @@ document.getElementById('routeForm').addEventListener('submit', async (e) => {
     submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Определяем координаты...';
 
     try {
-        // Используем фиксированные координаты центра для демо
-        const geocodeResult = {
-            latitude: 56.3287,
-            longitude: 44.0020,
-            formatted_address: address
-        };
-        
+        // Запрашиваем координаты у backend по адресу
+        const geocodeResponse = await fetch('http://localhost:8000/api/maps/geocode', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address: address })
+        });
+
+        if (!geocodeResponse.ok) {
+            throw new Error('Не удалось определить координаты');
+        }
+
+        const geocodeResult = await geocodeResponse.json();
+
         submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Генерируем маршрут...';
-        
+
         if (typeof showUserLocation === 'function') {
             showUserLocation(geocodeResult.latitude, geocodeResult.longitude);
         }
-        
+
         const response = await fetch('http://localhost:8000/api/route/generate', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                user_interests: interests,
-                available_time_hours: time,
-                user_location: {
-                    address: geocodeResult.formatted_address,
-                    latitude: geocodeResult.latitude,
-                    longitude: geocodeResult.longitude
-                }
-            })
+            user_interests: interests,
+            available_time_hours: time,
+            user_location: {
+                address: geocodeResult.formatted_address,
+                latitude: geocodeResult.latitude,
+                longitude: geocodeResult.longitude
+            }
+            }),
+
         });
 
         const data = await response.json();
-        
+
         if (response.ok) {
             document.getElementById('mapContainer').style.display = 'block';
             displayRoute(data.route);
             displayResults(data);
-            
+
             setTimeout(() => {
                 document.getElementById('mapContainer').scrollIntoView({ 
                     behavior: 'smooth',
@@ -64,7 +69,7 @@ document.getElementById('routeForm').addEventListener('submit', async (e) => {
         
     } catch (error) {
         console.error('Ошибка:', error);
-        showError('Не удалось подключиться к серверу');
+        showError(error.message);
     } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = originalText;

@@ -103,6 +103,8 @@ async def generate_route(
                 nearby_places.append((place, distance))
         
         nearby_places.sort(key=lambda x: x[1])
+
+        print("User location:", route_request.user_location.latitude, route_request.user_location.longitude)
         
         if not nearby_places:
             nearby_places = []
