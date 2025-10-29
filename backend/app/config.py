@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     PERPLEXITY_API_KEY: str = ""
     YANDEX_MAPS_API_KEY: str = ""
     YANDEX_GEOCODER_API_KEY: str = ""
+    YANDEX_SUGGEST_API_URL: str = ""
     
     # CORS
     CORS_ORIGINS: str = "http://localhost:3000,http://localhost:5173"

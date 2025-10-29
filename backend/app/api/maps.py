@@ -2,7 +2,7 @@
 Maps API endpoint
 Прокси для безопасной работы с Яндекс.Картами
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Body, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 import httpx
@@ -108,3 +108,30 @@ async def geocode_address(request: GeocodeRequest):
             raise HTTPException(status_code=503, detail=f"Connection error: {str(e)}")
         except Exception as e:
             raise HTTPException(status_code=500, detail=f"Geocoding error: {str(e)}")
+        
+
+@router.post("/maps/suggestions")
+async def get_address_suggestions(query: dict = Body(...)):
+    search_text = query.get("query")
+    if not search_text:
+        raise HTTPException(status_code=400, detail="Query is required")
+
+    params = {
+        "apikey" : settings.YANDEX_SUGGEST_API_URL,
+        "v": 4,
+        "type": "geo",
+        "part": search_text,
+        "lang": "ru_RU",
+        "results": 5,
+
+    }
+
+    async with httpx.AsyncClient() as client:
+        try:
+            response = await client.get(params=params)
+            response.raise_for_status()
+            data = response.json()
+            # Возвращаем список подсказок (обычно в data["suggestions"])
+            return {"suggestions": data.get("suggestions", [])}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error fetching suggestions: {e}")

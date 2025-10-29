@@ -1,6 +1,57 @@
 ﻿/**
- * Главный файл приложения с анимациями
+ * Главный файл приложения с анимациями и автодополнением адреса
  */
+
+const addressInput = document.getElementById('address');
+const suggestionsContainer = document.createElement('div');
+suggestionsContainer.id = 'suggestions-container';
+suggestionsContainer.style.position = 'absolute';
+suggestionsContainer.style.background = 'white';
+suggestionsContainer.style.border = '1px solid #ccc';
+suggestionsContainer.style.zIndex = '1000';
+suggestionsContainer.style.maxHeight = '150px';
+suggestionsContainer.style.overflowY = 'auto';
+suggestionsContainer.style.width = addressInput.offsetWidth + 'px';
+addressInput.parentNode.style.position = 'relative';
+addressInput.parentNode.appendChild(suggestionsContainer);
+
+// Обработчик ввода с автодополнением
+addressInput.addEventListener('input', async () => {
+    const query = addressInput.value.trim();
+    if (query.length < 3) {
+        suggestionsContainer.innerHTML = '';
+        return;
+    }
+
+    try {
+        const response = await fetch('http://localhost:8000/api/maps/suggestions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query }),
+        });
+        if (!response.ok) throw new Error('Failed to fetch suggestions');
+        const data = await response.json();
+
+        suggestionsContainer.innerHTML = '';
+        data.suggestions.forEach(s => {
+            // s может содержать разные поля, проверьте структуру в вашем API
+            const text = s.value || s.display || s; 
+            const item = document.createElement('div');
+            item.textContent = text;
+            item.style.padding = '5px';
+            item.style.cursor = 'pointer';
+
+            item.addEventListener('click', () => {
+                addressInput.value = text;
+                suggestionsContainer.innerHTML = '';
+            });
+            suggestionsContainer.appendChild(item);
+        });
+    } catch (error) {
+        console.error(error);
+        suggestionsContainer.innerHTML = '';
+    }
+});
 
 document.getElementById('routeForm').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -75,6 +126,8 @@ document.getElementById('routeForm').addEventListener('submit', async (e) => {
         submitBtn.innerHTML = originalText;
     }
 });
+
+
 
 function displayResults(data) {
     const resultsDiv = document.getElementById('results');
