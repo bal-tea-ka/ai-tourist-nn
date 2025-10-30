@@ -1,4 +1,4 @@
-def build_categories_prompt(user_interests, category_names, category_times):
+def build_categories_prompt(user_interests, category_names: dict, category_times: dict):
     prompt = "You are an AI assistant that helps to select categories based on user interests.\n"
     prompt += "Here are the available categories with time to visit it:\n"
     for cat_id, cat_name in category_names.items():

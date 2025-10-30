@@ -26,10 +26,10 @@ async def generate_route(
         # Запрос категорий по интересам пользователя
         category_names, category_times = await get_categories_from_db(db)
 
-        print(f"category_names keys: {list(category_names.keys())}")
-        print(f"category_times keys: {list(category_times.keys())}")
+        print(f"category_names keys: {list(category_names.keys())} // type: {type(category_names)}")
+        print(f"category_times keys: {list(category_times.keys())} // type: {type(category_times)}")
 
-        prompt1 = build_categories_prompt(category_names, category_times, route_request.user_interests)
+        prompt1 = build_categories_prompt(route_request.user_interests, category_names, category_times)
         categories_text = await call_perplexity(prompt1, DOMAIN_FILTER)
         selected_cat_ids = parse_categories_response(categories_text)
         if not selected_cat_ids:

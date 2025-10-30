@@ -15,7 +15,7 @@ async def call_perplexity(prompt: str, domain_filter=None) -> str:
     if domain_filter:
         payload["search_domain_filter"] = domain_filter
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=30.0) as client:
         r = await client.post("https://api.perplexity.ai/chat/completions", json=payload, headers=headers)
         r.raise_for_status()
         data = r.json()

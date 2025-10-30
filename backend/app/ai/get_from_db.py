@@ -12,15 +12,19 @@ async def get_categories_from_db(session: AsyncSession):
     return category_names, category_times
 
 async def get_places_from_db(session: AsyncSession):
-    result = await session.execute(select(Place).options(joinedload(Place.category)).where(Place.is_active == True))
+    result = await session.execute(
+        select(Place).options(joinedload(Place.category)).where(Place.is_active == True)
+    )
     places = result.scalars().all()
     place_list = []
     for place in places:
         place_list.append({
+            "id" : place.id,
             "title": place.title,
             "address": place.address,
             "category": place.category.name if place.category else "",
-            "avg_visit_duration": place.avg_visit_duration,
-            "notes": place.notes
+            "avg_visit_duration": place.category.avg_visit_duration if place.category and hasattr(place.category, 'avg_visit_duration') else 30,
+            "description": place.description
         })
     return place_list
+
