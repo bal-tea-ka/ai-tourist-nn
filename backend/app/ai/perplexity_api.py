@@ -16,7 +16,7 @@ async def call_perplexity(prompt: str, domain_filter=None) -> str:
         payload["search_domain_filter"] = domain_filter
 
     async with httpx.AsyncClient() as client:
-        r = await client.post("https://api.perplexity.ai/v1/chat/completions", json=payload, headers=headers)
+        r = await client.post("https://api.perplexity.ai/chat/completions", json=payload, headers=headers)
         r.raise_for_status()
         data = r.json()
         return data["choices"][0]["message"]["content"]

@@ -1,7 +1,8 @@
 ﻿"""
 Подключение к PostgreSQL
 """
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
+import greenlet
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker, async_scoped_session
 from sqlalchemy.orm import declarative_base
 from typing import AsyncGenerator
 from app.config import settings
@@ -20,6 +21,11 @@ async_session = async_sessionmaker(
     expire_on_commit=False
 )
 
+async_scoped_session = async_scoped_session(
+    async_session,
+    scopefunc=greenlet.getcurrent,
+)
+
 # Base класс для моделей
 Base = declarative_base()
 
@@ -32,7 +38,7 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     Yields:
         AsyncSession: Async сессия SQLAlchemy
     """
-    async with async_session() as session:
+    async with async_scoped_session() as session:
         try:
             yield session
         finally:
