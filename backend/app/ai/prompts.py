@@ -27,10 +27,16 @@ def build_route_prompt(places, available_time_hours, user_location):
                 '2. Include 3-4 places in the route, combining categories. Mention possible coffee shops for stops along the way (coffee shops are not included in the dataset, you can suggest them generally based on the logic of the route). \n' \
                 '3. Consider the average visit time from the dataset and realistic travel time between points (5-15 minutes). \n' \
                 '4. The response structure should be clear:    \n' \
-                '- **Place name and category.**    \n' \
-                '- **Justification for the choice:** Why we are going here, linking to the user\'s interests. \n' \
-                '- **Approximate timeline:** "10:00-10:20 - sightseeing of object X, 10:20-10:35 - transition to object Y". \n' \
-                '5. The response must be in the JSON format of a list of route objects. Each object should contain the fields: title, address, category, visit_duration, notes.\n' \
-                'Create a route and give a response in the required format.'
+                '5. The response must be a JSON array of route places, each object containing fields:\n' \
+                '- title (string): name of the place\n' \
+                '- address (string): address of the place\n' \
+                '- coordinates (object): with "latitude" and "longitude" as floats\n' \
+                '- category (object): with "id" (int) and "name" (string)\n' \
+                '- description (string): short textual description\n' \
+                '- visit_duration (int): average visit time in minutes\n' \
+                '- distance_from_user (float): approximate distance in km\n' \
+                '- reasoning (string): justification/reasoning for choosing this place\n' \
+                'Provide the response strictly as JSON matching this format.\n' \
+                'Create a route and give a response in the required format.'\
 
     return prompt

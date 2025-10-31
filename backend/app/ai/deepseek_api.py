@@ -1,10 +1,7 @@
-from app.config import settings
 import requests
 
-API_KEY = settings.PERPLEXITY_API_KEY
 
-
-def ask_openrouter(question: str, api_key: str) -> str:
+async def ask_openrouter(question: str, api_key: str) -> str:
 
     url = "https://openrouter.ai/api/v1/chat/completions"
 
@@ -35,11 +32,3 @@ def ask_openrouter(question: str, api_key: str) -> str:
 
     except Exception as e:
         return f"Ошибка: {str(e)}"
-
-
-if __name__ == "__main__":
-    print("AI")
-    print("=" * 50)
-    answer = ask_openrouter(main_prompt, API_KEY)
-    print("Ответ:")
-    print(answer)

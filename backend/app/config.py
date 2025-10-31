@@ -14,7 +14,7 @@ class Settings(BaseSettings):
     DATABASE_URL: str
     
     # API ключи
-    PERPLEXITY_API_KEY: str = ""
+    AI_API_KEY: str = ""
     YANDEX_MAPS_API_KEY: str = ""
     YANDEX_GEOCODER_API_KEY: str = ""
     YANDEX_SUGGEST_API_URL: str = ""

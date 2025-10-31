@@ -1,17 +1,19 @@
 from fastapi import APIRouter, Depends, Request, HTTPException
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.route import RouteRequest, RouteResponse
 from app.database import get_db
-from app.ai.perplexity_api import call_perplexity
+from app.models.place import Place
+from app.config import settings
+from app.ai.deepseek_api import ask_openrouter
 from app.ai.prompts import build_categories_prompt, build_route_prompt
 from app.ai.get_from_db import get_categories_from_db, get_places_from_db
-from app.ai.parsers import parse_categories_response, parse_route_response, build_route_response
+from app.ai.parsers import build_route_response_from_parsed, clean_ai_response, load_category_map, parse_categories_response, parse_route_response
 import time
+import uuid
 
 router = APIRouter()
 
-
-DOMAIN_FILTER = ["visitnn.ru", "tripadvisor.ru", "idoris.ru", "nnm.ru", "wikipedia.org"]
 
 @router.post("/route/generate", response_model=RouteResponse)
 async def generate_route(
@@ -30,8 +32,14 @@ async def generate_route(
         print(f"category_times keys: {list(category_times.keys())} // type: {type(category_times)}")
 
         prompt1 = build_categories_prompt(route_request.user_interests, category_names, category_times)
-        categories_text = await call_perplexity(prompt1, DOMAIN_FILTER)
-        selected_cat_ids = parse_categories_response(categories_text)
+        categories_text = await ask_openrouter(prompt1, settings.AI_API_KEY)
+        cleaned_categories_text = clean_ai_response(categories_text)
+        print(f"parse_categories_response input: {repr(cleaned_categories_text)}")
+        if not cleaned_categories_text.strip():
+            raise ValueError("Пустой ответ для парсинга категорий")
+
+       
+        selected_cat_ids = parse_categories_response(cleaned_categories_text)
         if not selected_cat_ids:
             selected_cat_ids = list(category_names.keys())
 
@@ -44,13 +52,23 @@ async def generate_route(
         })
 
         # Запрашиваем маршрут у нейросети
-        route_text = await call_perplexity(prompt2, DOMAIN_FILTER)
+        route_text = await ask_openrouter(prompt2, settings.AI_API_KEY)
+        cleaned_route_text = clean_ai_response(route_text)
+        print("AI response:", cleaned_route_text)
 
         # Парсим ответ в структуру для frontend
-        route_places = parse_route_response(route_text)
+        category_map = await load_category_map(db)
 
-        exec_time_ms = int((time.time() - start_time) * 1000)
-        route_response = build_route_response(route_places, route_request, request_id, exec_time_ms)
+        result = await db.execute(select(Place))  
+        db_places_list = result.scalars().all()
+        db_places = {place.title.lower(): place.id for place in db_places_list}
+        parsed_response = parse_route_response(cleaned_route_text, category_map, db_places)
+        request_id = str(uuid.uuid4())
+        exec_time_ms = int((time.time() - start_time) * 1000)      
+        route_response_dict = build_route_response_from_parsed(parsed_response, route_request, request_id, exec_time_ms )
+        route_response = RouteResponse.parse_obj(route_response_dict)
+        print(f"\n\nBilded route responce: {route_response}\n\n")
+        
 
         # Логируем запрос/ответ
         client_ip = request.client.host if request.client else None
