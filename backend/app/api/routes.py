@@ -8,7 +8,7 @@ from app.config import settings
 from app.ai.deepseek_api import ask_openrouter
 from app.ai.prompts import build_categories_prompt, build_route_prompt
 from app.ai.get_from_db import get_categories_from_db, get_places_from_db
-from app.ai.parsers import build_route_response_from_parsed, clean_ai_response, load_category_map, parse_categories_response, parse_route_response
+from app.ai.parsers import build_route_response_from_parsed, clean_ai_response, load_category_map, parse_categories_response, parse_route_response, update_coords_with_yandex_geocoder
 import time
 import uuid
 
@@ -63,6 +63,7 @@ async def generate_route(
         db_places_list = result.scalars().all()
         db_places = {place.title.lower(): place.id for place in db_places_list}
         parsed_response = parse_route_response(cleaned_route_text, category_map, db_places)
+        parsed_response = await update_coords_with_yandex_geocoder(settings.YANDEX_GEOCODER_API_KEY, parsed_response)
         request_id = str(uuid.uuid4())
         exec_time_ms = int((time.time() - start_time) * 1000)      
         route_response_dict = build_route_response_from_parsed(parsed_response, route_request, request_id, exec_time_ms )

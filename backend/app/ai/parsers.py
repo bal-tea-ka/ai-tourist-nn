@@ -1,5 +1,6 @@
 import json
 import re
+import httpx
 from typing import Dict, List
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -91,15 +92,6 @@ def clean_ai_response(response_text: str) -> str:
         raise ValueError("В ответе нет валидного JSON массива")
     json_part = response_text[start:end + 1]
     return json_part.strip()
-
-
-
-
-# Пример использования:
-# raw_response = your_api_call()
-# clean_response = clean_ai_response(raw_response)
-# data = json.loads(clean_response)
-
 
 
 
@@ -220,8 +212,36 @@ def build_route_response_from_parsed(parsed_response: dict, route_request, reque
     return response
 
 
-# Пример вызова (в вашем FastAPI эндпоинте или другой async среде):
-# async def example(session: AsyncSession, ai_response_text: str):
-#     category_map = await load_category_map(session)
-#     parsed_response = parse_route_response(ai_response_text, category_map)
-#     return parsed_response
+
+YANDEX_GEOCODER_API_URL = "https://geocode-maps.yandex.ru/1.x/"
+
+async def geocode_place_yandex(api_key: str, place_title: str, address: str = None):
+    query = place_title + address
+    params = {
+        "apikey": api_key,
+        "format": "json",
+        "geocode": query,
+        "results": 1
+    }
+    async with httpx.AsyncClient() as client:
+        resp = await client.get(YANDEX_GEOCODER_API_URL, params=params)
+        resp.raise_for_status()
+        data = resp.json()
+        try:
+            pos = data["response"]["GeoObjectCollection"]["featureMember"][0]["GeoObject"]["Point"]["pos"]
+            lon, lat = map(float, pos.split())
+            return lat, lon
+        except (IndexError, KeyError):
+            return None, None
+
+
+async def update_coords_with_yandex_geocoder(api_key: str, parsed_response: dict) -> dict:
+    places = parsed_response.get("route", {}).get("places", [])
+
+    for place in places:
+        lat, lon = await geocode_place_yandex(api_key, place.get("title", ""), place.get("address", ""))
+        if lat is not None and lon is not None:
+            place["coordinates"]["latitude"] = lat
+            place["coordinates"]["longitude"] = lon
+
+    return parsed_response

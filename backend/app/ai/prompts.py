@@ -21,7 +21,7 @@ def build_route_prompt(places, available_time_hours, user_location):
         prompt += f"- {place['title']}, address: {place['address']}, average visit duration: {place['avg_visit_duration']} min\n"
     prompt += f"User location: {user_location}\n"
     prompt += f"Available time for the route: {available_time_hours} hours.\n"
-    prompt += "Create a walking route including 3-4 places, considering visit durations and travel times between them."
+    prompt += "Create a walking route including 3-4 places, considering visit durations and travel times between them. Use yandex.Maps data to plan your route and plan your travel time."
     prompt +=  '\n# INSTRUCTIONS FOR FORMING A RESPONSE: \n' \
                 '1. Create a walking route, logically moving from the starting point to other places. \n' \
                 '2. Include 3-4 places in the route, combining categories. Mention possible coffee shops for stops along the way (coffee shops are not included in the dataset, you can suggest them generally based on the logic of the route). \n' \
@@ -29,7 +29,7 @@ def build_route_prompt(places, available_time_hours, user_location):
                 '4. The response structure should be clear:    \n' \
                 '5. The response must be a JSON array of route places, each object containing fields:\n' \
                 '- title (string): name of the place\n' \
-                '- address (string): address of the place\n' \
+                '- address (string): the most accurate address of the place: street and house. it`s really important\n' \
                 '- coordinates (object): with "latitude" and "longitude" as floats\n' \
                 '- category (object): with "id" (int) and "name" (string)\n' \
                 '- description (string): short textual description\n' \
