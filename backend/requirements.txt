@@ -8,12 +8,16 @@ asyncpg==0.30.0
 alembic==1.14.0
 greenlet==3.1.1
 
+
+
 # Валидация данных
 pydantic==2.10.3
 pydantic-settings==2.6.1
 
 # HTTP клиент
 httpx==0.28.1
+requests==2.32.3
+
 
 # Работа с данными
 pandas==2.2.3

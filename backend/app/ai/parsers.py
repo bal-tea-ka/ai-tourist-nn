@@ -85,13 +85,51 @@ def match_place_with_db(place_title: str, category_map: Dict[str, Dict]) -> Dict
     # Если совпадений нет - вернем дефолт
     return {"id": 0, "name": "Другое"}
 
-def clean_ai_response(response_text: str) -> str:
+'''def clean_ai_response(response_text: str) -> str:
     start = response_text.find('[')
     end = response_text.rfind(']')
     if start == -1 or end == -1 or end < start:
         raise ValueError("В ответе нет валидного JSON массива")
     json_part = response_text[start:end + 1]
-    return json_part.strip()
+    return json_part.strip()'''
+
+def clean_ai_response(response_text: str) -> str:
+    """Извлекает JSON из ответа AI, игнорируя текст до/после"""
+    import re
+
+    # Убрать лишние пробелы и переносы
+    response_text = response_text.strip()
+
+    # Попытка 1: Найти JSON массив [...]
+    start = response_text.find('[')
+    end = response_text.rfind(']')
+
+    if start != -1 and end != -1 and end >= start:
+        json_part = response_text[start:end + 1]
+        try:
+            # Проверка что это валидный JSON
+            import json
+            json.loads(json_part)
+            return json_part.strip()
+        except:
+            pass
+    
+    # Попытка 2: Найти JSON объект {...}
+    start = response_text.find('{')
+    end = response_text.rfind('}')
+    
+    if start != -1 and end != -1 and end >= start:
+        json_part = response_text[start:end + 1]
+        try:
+            import json
+            json.loads(json_part)
+            return json_part.strip()
+        except:
+            pass
+    
+    # Если ничего не найдено - ошибка
+    raise ValueError(f"В ответе нет валидного JSON. Ответ: {response_text[:100]}")
+
 
 
 

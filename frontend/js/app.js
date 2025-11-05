@@ -17,7 +17,7 @@ document.getElementById('routeForm').addEventListener('submit', async (e) => {
 
     try {
         // Запрашиваем координаты у backend по адресу
-        const geocodeResponse = await fetch('http://localhost:8000/api/maps/geocode', {
+        const geocodeResponse = await fetch('/api/maps/geocode', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ address: address })
@@ -35,7 +35,7 @@ document.getElementById('routeForm').addEventListener('submit', async (e) => {
             showUserLocation(geocodeResult.latitude, geocodeResult.longitude);
         }
 
-        const response = await fetch('http://localhost:8000/api/route/generate', {
+        const response = await fetch('/api/route/generate', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

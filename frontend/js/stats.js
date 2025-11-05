@@ -16,7 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
  */
 async function loadStats() {
     try {
-        const response = await fetch('http://localhost:8000/api/stats');
+        const response = await fetch('/api/stats');
         const data = await response.json();
         
         // Основные метрики
@@ -97,7 +97,7 @@ function displayPopularLocations(locations) {
  */
 async function loadCategoryStats() {
     try {
-        const response = await fetch('http://localhost:8000/api/stats/categories');
+        const response = await fetch('/api/stats/categories');
         const data = await response.json();
         
         displayCategoryStats(data.categories);

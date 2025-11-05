@@ -12,7 +12,7 @@ let userLocationMark = null;
  */
 async function loadMapConfig() {
     try {
-        const response = await fetch('http://localhost:8000/api/maps/config');
+        const response = await fetch('/api/maps/config');
         if (!response.ok) throw new Error('Failed to load map config');
         return await response.json();
     } catch (error) {
@@ -154,7 +154,7 @@ function showUserLocation(latitude, longitude) {
  */
 async function geocodeAddress(address) {
     try {
-        const response = await fetch('http://localhost:8000/api/maps/geocode', {
+        const response = await fetch('/api/maps/geocode', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
